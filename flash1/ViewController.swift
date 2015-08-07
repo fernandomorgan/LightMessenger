@@ -41,6 +41,8 @@ class ViewController: UIViewController {
     @IBAction func sendMessage(sender: AnyObject) {
         message.resignFirstResponder()
         
+        guard message.text!.lengthOfBytesUsingEncoding(NSUTF8StringEncoding) > 0 else {return}
+        
         statusMsg.text = "Sending"
         let arrDec = message.text!.decomposeStringInBinary();
         print("Array of Decs=\(arrDec)")
@@ -59,14 +61,20 @@ class ViewController: UIViewController {
                 self.statusMsg.text = message
             }
             statusMsg.text = "Receiving"
+            _isReceiving = true
             receiveButton.setTitle("Cancel", forState: UIControlState.Normal)
             flashMessages.startReceivingMessage(statusCallback)
         } else {
             flashMessages.stopReceivingMessage()
-            receiveButton.setTitle("Receive", forState: UIControlState.Normal)
             statusMsg.text = "Ready"
+            stoppedReceiving()
         }
-        _isReceiving = !_isReceiving
+    }
+    
+    private func stoppedReceiving() {
+        
+        _isReceiving = false
+        receiveButton.setTitle("Receive", forState: UIControlState.Normal)
     }
     
     @objc private func gotResult(notification: NSNotification){
@@ -79,6 +87,7 @@ class ViewController: UIViewController {
             message.text = "Result: " + (result as String)
         }
         statusMsg.text = "Finished Receiving - Ready"
+        stoppedReceiving()
     }
     
 }

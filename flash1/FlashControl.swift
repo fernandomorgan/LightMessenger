@@ -61,9 +61,9 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     
     // MARK: timing rules for 0s 1s and start/end transmission
     
-    let timeForZero: NSTimeInterval = 0.2
-    let timeForOne: NSTimeInterval  = 0.4
-    let timeForStartOrEndOfTransmission: NSTimeInterval = 1
+    let timeForZero: NSTimeInterval = 0.5
+    let timeForOne: NSTimeInterval  = 1
+    let timeForStartOrEndOfTransmission: NSTimeInterval = 2
     
     override init () {
         for device in AVCaptureDevice.devices() {
@@ -191,6 +191,12 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         _lastTimeStamp = kCMTimeZero
         _callbackBlock = nil
         
+        if _ascii7charBuffer.count > 0 {
+        
+            let message : String = "Incomplete word " + String(_ascii7charBuffer)
+            logStatus(message)
+        }
+        
         let result = NSString(binaryCompose: _readBuffer as [AnyObject])
         print("We received \(result)")
         let userInfo = ["result": result]
@@ -200,7 +206,7 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     // MARK: Capture Delegate
     
     private var _lastSampleReadWasBright = false
-    private var _currentSampleBrightnessTime: Float64 = 0
+    private var _currentBrightnessTimeInSeconds: Float64 = 0
     private var _readBuffer = NSMutableArray()
     private var _ascii7charBuffer:[Int] = []
     private var _lastTimeStamp = kCMTimeZero
@@ -208,7 +214,7 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     
     private func resetMessageReceiving() {
         _lastSampleReadWasBright = false
-        _currentSampleBrightnessTime = 0
+        _currentBrightnessTimeInSeconds = 0
         _readBuffer = NSMutableArray()
         _ascii7charBuffer = []
         _lastTimeStamp = kCMTimeZero
@@ -234,10 +240,14 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             
             let nrSamples = CMSampleBufferGetNumSamples(sampleBuffer)
             let currentTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            let presentationTimeStamp = CMTimeSubtract(currentTimeStamp, _lastTimeStamp);
-
+            var seconds: Float64 = 0
+            if _lastTimeStamp != kCMTimeZero {
+                let presentationTimeStamp = CMTimeSubtract(currentTimeStamp, _lastTimeStamp);
+                seconds = CMTimeGetSeconds(presentationTimeStamp)
+            } else {
+              //?
+            }
             _lastTimeStamp = currentTimeStamp
-            let seconds = CMTimeGetSeconds(presentationTimeStamp)
             
             func endWord () {
                 var fullWord: String = ""
@@ -248,30 +258,35 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                         fullWord += "0"
                     }
                 }
-                logStatus("Word: " +  fullWord)
+                logStatus("received word: " +  fullWord)
                 _readBuffer.addObject( NSString(string: fullWord) )
                 _ascii7charBuffer = []
             }
             
-            if  isBright != _lastSampleReadWasBright {
+            if  isBright != _lastSampleReadWasBright && _currentBrightnessTimeInSeconds > 0 {
                 
                 // signal timeForStartOrEndOfTransmission controls start/end of messasges
-                if _currentSampleBrightnessTime > timeForStartOrEndOfTransmission {
+                if _currentBrightnessTimeInSeconds > timeForStartOrEndOfTransmission {
                     if _messageHasStarted {                        
+                        if _ascii7charBuffer.count == 7 {
+                            endWord()
+                        } else if _ascii7charBuffer.count > 0 {
+                            print("orphan/misunderstand message: \(_ascii7charBuffer)")
+                        }
                         endWord()
                         logStatus("Ending Message Receive")
                         dispatch_async(dispatch_get_main_queue(), { () -> Void in
                             self.endCapture()
                         })
                     // the message start is ALWAYS a flash, never a dark period
-                    } else if isBright {
+                    } else if _lastSampleReadWasBright {
                         logStatus("Starting Message Receive")
                         _messageHasStarted = true
                     }
                 }
                     
                 if _messageHasStarted {
-                    if _currentSampleBrightnessTime > timeForOne {
+                    if _currentBrightnessTimeInSeconds > timeForOne {
                         _ascii7charBuffer.append( 1 )
                     }
                         
@@ -283,12 +298,13 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                         endWord()
                     }
                 }
-                _currentSampleBrightnessTime = 0
+                _currentBrightnessTimeInSeconds = seconds
                 _lastSampleReadWasBright = isBright
             }
             // no change in brightness, we just add time
             else {
-                _currentSampleBrightnessTime += seconds
+                _currentBrightnessTimeInSeconds += seconds
+                print("Current seconds=\(_currentBrightnessTimeInSeconds) and brightness is \(_lastSampleReadWasBright)")
             }
     }
 }
