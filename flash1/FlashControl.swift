@@ -46,6 +46,17 @@ import AVFoundation
 */
 
 typealias voidCallbackForStatusMessageClosure = (message : String) -> Void
+typealias voidCallbackForEndClosure = () -> Void
+
+// MARK: timing rules for 0s 1s and start/end transmission
+
+let timeForZero: NSTimeInterval = 1
+let timeForOne: NSTimeInterval  = 2
+let timeForStartOrEndOfTransmission: NSTimeInterval = 4
+let errorMarginTime: NSTimeInterval = 0.5
+
+// DECODER Class initialization
+var decoder = Decoder()
 
 class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
 
@@ -56,14 +67,11 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     // MARK: AVFoundation for receive
     
     var captureSession: AVCaptureSession?
-    let receiveDispatchQueue = dispatch_queue_create( "com.troezen.flash1", DISPATCH_QUEUE_SERIAL)
-    private var _callbackBlock : voidCallbackForStatusMessageClosure?
+    let receiveDispatchQueue = dispatch_queue_create("com.troezen.flash1", DISPATCH_QUEUE_SERIAL)
     
-    // MARK: timing rules for 0s 1s and start/end transmission
+    // MARK: Sending lifecycle
     
-    let timeForZero: NSTimeInterval = 0.5
-    let timeForOne: NSTimeInterval  = 1
-    let timeForStartOrEndOfTransmission: NSTimeInterval = 2
+    private var _cancelSend = false
     
     override init () {
         for device in AVCaptureDevice.devices() {
@@ -87,9 +95,14 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     
     // MARK: Sending Messages
     
-    func sendAMessage(message: NSArray) {
+    func sendAMessage(message: NSArray, completion:voidCallbackForEndClosure?) {
+        
+        _cancelSend = false
         initializeSendingMessage()
         do {
+            if _cancelSend {
+                return
+            }
             // signal start transmission
             try sendOneBit(timeForStartOrEndOfTransmission)
             for numberToSend in message {
@@ -107,7 +120,15 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         } catch {
             print("Something bad happened! Help! Help!")
         }
-        
+        if completion != nil {
+            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                completion!()
+            })            
+        }
+    }
+    
+    func cancelMessage() {
+        _cancelSend = true
     }
     
     // controls if Bit is sent as light or dark period
@@ -117,9 +138,7 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         _bitSentAsLight = false
     }
     
-    
     private func sendOneBit(timeToSend: NSTimeInterval) throws{
-        
         guard  let camera: AVCaptureDevice = backCamera  else { return }
         
         if _bitSentAsLight {
@@ -137,7 +156,6 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             camera.torchMode = AVCaptureTorchMode.Off
             camera.unlockForConfiguration()
         }
-        
         _bitSentAsLight = !_bitSentAsLight
     }
     
@@ -148,16 +166,8 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         guard  let camera: AVCaptureDevice = backCamera  else { return }
 
         if callback != nil {
-            _callbackBlock = callback
+            decoder.setCallbackBlock( callback! )
         }
-        /*
-        do {
-            try camera.lockForConfiguration()
-        } catch {}
-        camera.activeVideoMinFrameDuration = CMTimeMake(10, 60)
-        camera.activeVideoMaxFrameDuration = CMTimeMake(10, 60)
-        camera.unlockForConfiguration()
-        */
         
         captureSession = AVCaptureSession()
         captureSession?.sessionPreset = AVCaptureSessionPresetLow
@@ -173,142 +183,24 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         
         videoDataOutput.setSampleBufferDelegate(self, queue: receiveDispatchQueue)
         captureSession?.addOutput(videoDataOutput)
-        
-        resetMessageReceiving()
         captureSession?.startRunning()
-        
     }
     
     func stopReceivingMessage() {
-        endCapture()
-    }
-    
-    private func endCapture() {
-        
         captureSession?.stopRunning()
-        
-        _ascii7charBuffer = []
-        _lastTimeStamp = kCMTimeZero
-        _callbackBlock = nil
-        
-        if _ascii7charBuffer.count > 0 {
-        
-            let message : String = "Incomplete word " + String(_ascii7charBuffer)
-            logStatus(message)
-        }
-        
-        let result = NSString(binaryCompose: _readBuffer as [AnyObject])
-        print("We received \(result)")
-        let userInfo = ["result": result]
-        NSNotificationCenter.defaultCenter().postNotificationName("CAPTURE_RESULT", object:self, userInfo:userInfo)
+        decoder.reset()
     }
     
     // MARK: Capture Delegate
-    
-    private var _lastSampleReadWasBright = false
-    private var _currentBrightnessTimeInSeconds: Float64 = 0
-    private var _readBuffer = NSMutableArray()
-    private var _ascii7charBuffer:[Int] = []
-    private var _lastTimeStamp = kCMTimeZero
-    private var _messageHasStarted = false
-    
-    private func resetMessageReceiving() {
-        _lastSampleReadWasBright = false
-        _currentBrightnessTimeInSeconds = 0
-        _readBuffer = NSMutableArray()
-        _ascii7charBuffer = []
-        _lastTimeStamp = kCMTimeZero
-        _messageHasStarted = false
-    }
-    
-    private func logStatus (message: String) {
-        
-        if _callbackBlock != nil {
-            dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                self._callbackBlock!(message: message)
-            })
-        }
-        
-        print(message)
-    }
-    
     func captureOutput(captureOutput: AVCaptureOutput!,
         didOutputSampleBuffer sampleBuffer: CMSampleBuffer!,
         fromConnection connection: AVCaptureConnection!) {
-            
             let isBright = getBrightness(sampleBuffer)
-            
-            let nrSamples = CMSampleBufferGetNumSamples(sampleBuffer)
             let currentTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            var seconds: Float64 = 0
-            if _lastTimeStamp != kCMTimeZero {
-                let presentationTimeStamp = CMTimeSubtract(currentTimeStamp, _lastTimeStamp);
-                seconds = CMTimeGetSeconds(presentationTimeStamp)
-            } else {
-              //?
-            }
-            _lastTimeStamp = currentTimeStamp
-            
-            func endWord () {
-                var fullWord: String = ""
-                for intVal in _ascii7charBuffer {
-                    if intVal == 1 {
-                        fullWord += "1"
-                    } else {
-                        fullWord += "0"
-                    }
-                }
-                logStatus("received word: " +  fullWord)
-                _readBuffer.addObject( NSString(string: fullWord) )
-                _ascii7charBuffer = []
-            }
-            
-            if  isBright != _lastSampleReadWasBright && _currentBrightnessTimeInSeconds > 0 {
-                
-                // signal timeForStartOrEndOfTransmission controls start/end of messasges
-                if _currentBrightnessTimeInSeconds > timeForStartOrEndOfTransmission {
-                    if _messageHasStarted {                        
-                        if _ascii7charBuffer.count == 7 {
-                            endWord()
-                        } else if _ascii7charBuffer.count > 0 {
-                            print("orphan/misunderstand message: \(_ascii7charBuffer)")
-                        }
-                        endWord()
-                        logStatus("Ending Message Receive")
-                        dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                            self.endCapture()
-                        })
-                    // the message start is ALWAYS a flash, never a dark period
-                    } else if _lastSampleReadWasBright {
-                        logStatus("Starting Message Receive")
-                        _messageHasStarted = true
-                    }
-                }
-                    
-                if _messageHasStarted {
-                    if _currentBrightnessTimeInSeconds > timeForOne {
-                        _ascii7charBuffer.append( 1 )
-                    }
-                        
-                    else {
-                        _ascii7charBuffer.append( 0 )
-                    }
-                    
-                    if _ascii7charBuffer.count == 7 {
-                        endWord()
-                    }
-                }
-                _currentBrightnessTimeInSeconds = seconds
-                _lastSampleReadWasBright = isBright
-            }
-            // no change in brightness, we just add time
-            else {
-                _currentBrightnessTimeInSeconds += seconds
-                print("Current seconds=\(_currentBrightnessTimeInSeconds) and brightness is \(_lastSampleReadWasBright)")
-            }
+            let nrSamples = CMSampleBufferGetNumSamples(sampleBuffer)
+            if nrSamples != 1 {
+                print("Not handling samples > 1 - nrSamples=\(nrSamples)")
+            }                
+            decoder.addFrame(currentTimeStamp, isBright)
     }
 }
-
-
-
-

@@ -14,18 +14,14 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-#define NUMBER_OF_FRAME_PER_S 5
-#define BRIGHTNESS_THRESHOLD 70
-#define MIN_BRIGHTNESS_THRESHOLD 10
+#define BRIGHTNESS_THRESHOLD 60
 
 static int  _lastTotalBrightnessValue = 0;
-
 
 int calculateLevelOfBrightness (int pCurrentBrightness)
 {
     return (pCurrentBrightness*100) /_lastTotalBrightnessValue;
 }
-
 
 BOOL getBrightness(CMSampleBufferRef sampleBuffer)
 {
@@ -57,14 +53,7 @@ BOOL getBrightness(CMSampleBufferRef sampleBuffer)
         
         if ( calculateLevelOfBrightness(totalBrightness) < BRIGHTNESS_THRESHOLD )
         {
-            if(calculateLevelOfBrightness(totalBrightness)>MIN_BRIGHTNESS_THRESHOLD)
-            {
-                rc = NO;
-            }
-            else //Mobile phone is probably on a table (too dark - camera obturated)
-            {
-                rc = YES;
-            }
+            rc = NO;
         }
         else{
             _lastTotalBrightnessValue = totalBrightness;

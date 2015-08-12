@@ -74,7 +74,6 @@ int decimal_binary(int n)  /* Function to convert decimal to binary.*/
 }
 
 int binary_decimal(int n) /* Function to convert binary to decimal.*/
-
 {
     int decimal=0, i=0, rem;
     while (n!=0)

@@ -6,3 +6,4 @@
 #import <AVFoundation/AVFoundation.h>
 
 BOOL getBrightness(CMSampleBufferRef sampleBuffer);
+int binary_decimal(int n); /* Function to convert binary to decimal.*/

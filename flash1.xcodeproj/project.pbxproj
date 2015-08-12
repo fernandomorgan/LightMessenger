@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		903917D31B7AB7FA00CC8DF1 /* Decoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903917D21B7AB7FA00CC8DF1 /* Decoder.swift */; };
 		90EA3BC41B741A8E0000ADB3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90EA3BC31B741A8E0000ADB3 /* AppDelegate.swift */; };
 		90EA3BC61B741A8E0000ADB3 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90EA3BC51B741A8E0000ADB3 /* ViewController.swift */; };
 		90EA3BC91B741A8E0000ADB3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 90EA3BC71B741A8E0000ADB3 /* Main.storyboard */; };
@@ -37,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		903917D21B7AB7FA00CC8DF1 /* Decoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Decoder.swift; sourceTree = "<group>"; };
 		90EA3BC01B741A8E0000ADB3 /* flash1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = flash1.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		90EA3BC31B741A8E0000ADB3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		90EA3BC51B741A8E0000ADB3 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -116,6 +118,7 @@
 				90EA3BF11B74210A0000ADB3 /* flash1-Bridging-Header.h */,
 				90EA3BF51B7427980000ADB3 /* FlashControl.swift */,
 				90EA3C041B744AA90000ADB3 /* Utilities.m */,
+				903917D21B7AB7FA00CC8DF1 /* Decoder.swift */,
 			);
 			path = flash1;
 			sourceTree = "<group>";
@@ -273,6 +276,7 @@
 				90EA3BF61B7427980000ADB3 /* FlashControl.swift in Sources */,
 				90EA3BF41B74210A0000ADB3 /* NSString+Binary.m in Sources */,
 				90EA3BC61B741A8E0000ADB3 /* ViewController.swift in Sources */,
+				903917D31B7AB7FA00CC8DF1 /* Decoder.swift in Sources */,
 				90EA3C051B744AA90000ADB3 /* Utilities.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -505,6 +509,7 @@
 				90EA3BEA1B741A8E0000ADB3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		90EA3BEB1B741A8E0000ADB3 /* Build configuration list for PBXNativeTarget "flash1Tests" */ = {
 			isa = XCConfigurationList;
@@ -513,6 +518,7 @@
 				90EA3BED1B741A8E0000ADB3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		90EA3BEE1B741A8E0000ADB3 /* Build configuration list for PBXNativeTarget "flash1UITests" */ = {
 			isa = XCConfigurationList;
@@ -521,6 +527,7 @@
 				90EA3BF01B741A8E0000ADB3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

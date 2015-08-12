@@ -22,6 +22,8 @@ class ViewController: UIViewController {
     
     private var _isReceiving = false
     
+    private var _sendingOperQueue: NSOperationQueue?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -43,6 +45,14 @@ class ViewController: UIViewController {
         
         guard message.text!.lengthOfBytesUsingEncoding(NSUTF8StringEncoding) > 0 else {return}
         
+        if _sendingOperQueue == nil {
+            _sendingOperQueue = NSOperationQueue()
+            _sendingOperQueue!.maxConcurrentOperationCount = 1
+        }
+        
+        let sendButton = sender as! UIButton
+        
+        sendButton.hidden = true
         statusMsg.text = "Sending"
         let arrDec = message.text!.decomposeStringInBinary();
         print("Array of Decs=\(arrDec)")
@@ -50,8 +60,12 @@ class ViewController: UIViewController {
         print("Reverse Translation: \(testStr)")
         assert( testStr.isEqualToString(message.text!) )
         
-        flashMessages.sendAMessage(arrDec)
-        statusMsg.text = "Ready"
+        _sendingOperQueue?.addOperationWithBlock({ () -> Void in
+            self.flashMessages.sendAMessage(arrDec, completion: {()->Void in
+                self.statusMsg.text = "Ready"
+                sendButton.hidden = false
+            })
+        })
     }
     
     @IBAction func receiveMessage(sender: AnyObject) {
@@ -60,13 +74,11 @@ class ViewController: UIViewController {
             let statusCallback : voidCallbackForStatusMessageClosure = { (message:String)->Void in
                 self.statusMsg.text = message
             }
-            statusMsg.text = "Receiving"
+            statusMsg.text = "Waiting for Start of Message"
             _isReceiving = true
             receiveButton.setTitle("Cancel", forState: UIControlState.Normal)
             flashMessages.startReceivingMessage(statusCallback)
         } else {
-            flashMessages.stopReceivingMessage()
-            statusMsg.text = "Ready"
             stoppedReceiving()
         }
     }
@@ -75,6 +87,8 @@ class ViewController: UIViewController {
         
         _isReceiving = false
         receiveButton.setTitle("Receive", forState: UIControlState.Normal)
+        flashMessages.stopReceivingMessage()
+        statusMsg.text = "Ready"
     }
     
     @objc private func gotResult(notification: NSNotification){
@@ -82,11 +96,13 @@ class ViewController: UIViewController {
         print("Got result: \(notification)")
         
         let tmp: [NSObject : AnyObject] = notification.userInfo!
-        if let result : NSString = tmp["result"] as? NSString {
+        if let result = tmp["result"] as? String {
             
-            message.text = "Result: " + (result as String)
+            let alert = UIAlertController(title: "Received", message: result, preferredStyle: .Alert)
+            alert.addAction(UIAlertAction(title: "Ok", style: .Default, handler: nil))
+            presentViewController(alert, animated: true, completion: nil)
+            
         }
-        statusMsg.text = "Finished Receiving - Ready"
         stoppedReceiving()
     }
     
