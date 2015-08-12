@@ -50,10 +50,10 @@ typealias voidCallbackForEndClosure = () -> Void
 
 // MARK: timing rules for 0s 1s and start/end transmission
 
-let timeForZero: NSTimeInterval = 1
-let timeForOne: NSTimeInterval  = 2
-let timeForStartOrEndOfTransmission: NSTimeInterval = 4
-let errorMarginTime: NSTimeInterval = 0.5
+let timeForZero: NSTimeInterval = 0.5
+let timeForOne: NSTimeInterval  = 1.2
+let timeForStartOrEndOfTransmission: NSTimeInterval = 2
+let errorMarginTime: NSTimeInterval = 0.3
 
 // DECODER Class initialization
 var decoder = Decoder()
@@ -147,12 +147,12 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             // start
             try camera.lockForConfiguration()
             try camera.setTorchModeOnWithLevel(1.0)
-            camera.unlockForConfiguration()
+            //camera.unlockForConfiguration()
             
             NSThread.sleepForTimeInterval(timeToSend)
             
             // stop
-            try camera.lockForConfiguration()
+            //try camera.lockForConfiguration()
             camera.torchMode = AVCaptureTorchMode.Off
             camera.unlockForConfiguration()
         }
@@ -168,6 +168,7 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         if callback != nil {
             decoder.setCallbackBlock( callback! )
         }
+        setBestFrameRate()
         
         captureSession = AVCaptureSession()
         captureSession?.sessionPreset = AVCaptureSessionPresetLow
@@ -202,5 +203,35 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                 print("Not handling samples > 1 - nrSamples=\(nrSamples)")
             }                
             decoder.addFrame(currentTimeStamp, isBright)
+    }
+    
+    private func setBestFrameRate() {
+        guard  let camera: AVCaptureDevice = backCamera  else { return }
+        
+        var bestFormat:AVCaptureDeviceFormat?
+        var bestFrameRate: AVFrameRateRange?
+        
+        for formatObj in camera.formats {
+            let format = formatObj as! AVCaptureDeviceFormat
+            for rangeObj in format.videoSupportedFrameRateRanges {
+                let range = rangeObj as! AVFrameRateRange
+                if bestFrameRate == nil || range.maxFrameRate > bestFrameRate?.maxFrameRate {
+                    bestFrameRate = range
+                    bestFormat = format
+                }
+            }
+        }
+        
+        if bestFormat != nil && bestFrameRate != nil {
+            do {
+                try camera.lockForConfiguration()
+                camera.activeFormat = bestFormat
+                camera.activeVideoMinFrameDuration = (bestFrameRate?.minFrameDuration)!
+                camera.activeVideoMaxFrameDuration = (bestFrameRate?.maxFrameDuration)!
+                camera.unlockForConfiguration()
+            } catch {
+                print("Error trying to set the camera to best frame rate")
+            }
+        }
     }
 }
