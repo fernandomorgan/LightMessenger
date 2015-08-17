@@ -95,7 +95,7 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     
     // MARK: Sending Messages
     
-    func sendAMessage(message: NSArray, completion:voidCallbackForEndClosure?) {
+    func sendAMessage(message: NSArray, updateStatus:voidCallbackForStatusMessageClosure?) {
         
         _cancelSend = false
         initializeSendingMessage()
@@ -104,9 +104,20 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                 return
             }
             // signal start transmission
+            if updateStatus != nil {
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    updateStatus!(message: "Starting Transmission")
+                })
+            }
             try sendOneBit(timeForStartOrEndOfTransmission)
             for numberToSend in message {
                 let str = String(numberToSend)
+                if updateStatus != nil {
+                    dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                        updateStatus!(message: "Sending " + str)
+                    })
+                }
+                
                 for char in str.characters {
                     if char == "1" {
                         try sendOneBit(timeForOne)
@@ -116,14 +127,14 @@ class FlashControl : NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
                 }
             }
             // signal end transmission
+            if updateStatus != nil {
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                    updateStatus!(message: "Ending Transmission")
+                })
+            }
             try sendOneBit(timeForStartOrEndOfTransmission)
         } catch {
             print("Something bad happened! Help! Help!")
-        }
-        if completion != nil {
-            dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                completion!()
-            })            
         }
     }
     

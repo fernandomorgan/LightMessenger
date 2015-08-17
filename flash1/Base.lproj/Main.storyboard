@@ -13,7 +13,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="fzI-Nf-Nzp">
-                                <rect key="frame" x="142" y="180" width="36" height="30"/>
+                                <rect key="frame" x="142" y="362" width="36" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <animations/>
                                 <state key="normal" title="Send"/>
@@ -21,15 +21,35 @@
                                     <action selector="sendMessage:" destination="BYZ-38-t0r" eventType="touchUpInside" id="qeh-he-Ydm"/>
                                 </connections>
                             </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Initializing... please wait" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="nG6-S3-yti">
+                                <rect key="frame" x="27" y="456" width="273" height="21"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <animations/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" id="9Ag-Nb-YHs">
+                                <rect key="frame" x="27" y="54" width="273" height="29"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <animations/>
+                                <segments>
+                                    <segment title="Sending"/>
+                                    <segment title="Receiving"/>
+                                </segments>
+                                <connections>
+                                    <action selector="changeSendingOrReceiving:" destination="BYZ-38-t0r" eventType="valueChanged" id="onv-vB-Bs4"/>
+                                </connections>
+                            </segmentedControl>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" id="4lK-BI-3Dp">
-                                <rect key="frame" x="47" y="122" width="226" height="30"/>
+                                <rect key="frame" x="47" y="269" width="226" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <animations/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Text to Send" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="dAI-Xc-IBM">
-                                <rect key="frame" x="112" y="69" width="96" height="21"/>
+                                <rect key="frame" x="112" y="235" width="96" height="21"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <animations/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
@@ -37,7 +57,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" id="s7C-qQ-eXY">
-                                <rect key="frame" x="133" y="333" width="54" height="30"/>
+                                <rect key="frame" x="133" y="269" width="54" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <animations/>
                                 <state key="normal" title="Receive"/>
@@ -45,14 +65,6 @@
                                     <action selector="receiveMessage:" destination="BYZ-38-t0r" eventType="touchUpInside" id="f28-Pu-9rI"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Initializing... please wait" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="nG6-S3-yti">
-                                <rect key="frame" x="39" y="418" width="234" height="21"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <animations/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                         </subviews>
                         <animations/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
@@ -60,12 +72,15 @@
                     <connections>
                         <outlet property="message" destination="4lK-BI-3Dp" id="dZt-nU-bCw"/>
                         <outlet property="receiveButton" destination="s7C-qQ-eXY" id="Hi6-SF-1zA"/>
+                        <outlet property="sendButton" destination="fzI-Nf-Nzp" id="NEW-SO-ia8"/>
+                        <outlet property="sendOrReceive" destination="9Ag-Nb-YHs" id="Giq-25-gT2"/>
                         <outlet property="statusMsg" destination="nG6-S3-yti" id="Xdu-p1-QA9"/>
+                        <outlet property="textMsgLabel" destination="dAI-Xc-IBM" id="FkZ-kr-dND"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="162" y="395"/>
+            <point key="canvasLocation" x="22" y="199"/>
         </scene>
     </scenes>
 </document>
